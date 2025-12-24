@@ -10,6 +10,10 @@
     "start": "node start.js",
     "server": "nodemon server.js",
     "build": "echo 'No build needed for Node.js'",
+    "seed:departments": "node seedDepartments.js",
+    "seed:sports": "node seedSports.js",
+    "seed:sample": "node seedSampleData.js",
+    "seed:all": "npm run seed:departments && npm run seed:sports && npm run seed:sample",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": ["vnit", "sports", "scoring", "backend"],

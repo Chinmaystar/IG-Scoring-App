@@ -13,6 +13,8 @@ const errorHandler = require("./middleware/errorHandler");
 const contactRoutes = require("./routes/contactRoutes");
 const userRoutes = require("./routes/userRoutes");
 const scoreRoutes = require("./routes/scoreRoutes");
+const departmentRoutes = require("./routes/departmentRoutes");
+const sportRoutes = require("./routes/sportRoutes");
 
 // Load environment variables
 dotenv.config();
@@ -115,6 +117,8 @@ app.get("/api/health", (req, res) => {
 app.use("/api/contacts", contactRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/scores", scoreRoutes);
+app.use("/api/departments", departmentRoutes);
+app.use("/api/sports", sportRoutes);
 
 // Serve React app for all other routes (client-side routing)
 if (process.env.NODE_ENV === "production") {
