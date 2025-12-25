@@ -99,26 +99,48 @@ export function FootballScorecard() {
             </div>
 
             <div className="grid grid-cols-2 gap-2 mt-2">
-              <Button
-                onClick={() =>
-                  setMatch(m => ({ ...m, yellow1: m.yellow1 + 1 }))
-                }
-                variant="outline"
-                size="sm"
-              >
-                Yellow Card
-              </Button>
+              {/* Yellow */}
+              <div className="flex gap-1">
+                <Button
+                  onClick={() => setMatch(m => ({ ...m, yellow1: m.yellow1 + 1 }))}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                >
+                  Yellow Card
+                </Button>
+                <Button
+                  onClick={() =>
+                    setMatch(m => ({ ...m, yellow1: Math.max(0, m.yellow1 - 1) }))
+                  }
+                  variant="outline"
+                  size="sm"
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+              </div>
 
-              <Button
-                onClick={() =>
-                  setMatch(m => ({ ...m, red1: m.red1 + 1 }))
-                }
-                variant="outline"
-                size="sm"
-              >
-                Red Card
-              </Button>
-            </div>
+              {/* Red */}
+              <div className="flex gap-1">
+                <Button
+                  onClick={() => setMatch(m => ({ ...m, red1: m.red1 + 1 }))}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                >
+                  Red Card
+                </Button>
+                <Button
+                  onClick={() =>
+                    setMatch(m => ({ ...m, red1: Math.max(0, m.red1 - 1) }))
+                  }
+                  variant="outline"
+                  size="sm"
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+              </div>
+          </div>
           </CardContent>
         </Card>
 
@@ -158,27 +180,48 @@ export function FootballScorecard() {
                 <Minus className="h-4 w-4" />
               </Button>
             </div>
-
             <div className="grid grid-cols-2 gap-2 mt-2">
-              <Button
-                onClick={() =>
-                  setMatch(m => ({ ...m, yellow2: m.yellow2 + 1 }))
-                }
-                variant="outline"
-                size="sm"
-              >
-                Yellow Card
-              </Button>
+              {/* Yellow */}
+              <div className="flex gap-1">
+                <Button
+                  onClick={() => setMatch(m => ({ ...m, yellow2: m.yellow2 + 1 }))}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                >
+                  Yellow Card
+                </Button>
+                <Button
+                  onClick={() =>
+                    setMatch(m => ({ ...m, yellow2: Math.max(0, m.yellow2 - 1) }))
+                  }
+                  variant="outline"
+                  size="sm"
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+              </div>
 
-              <Button
-                onClick={() =>
-                  setMatch(m => ({ ...m, red2: m.red2 + 1 }))
-                }
-                variant="outline"
-                size="sm"
-              >
-                Red Card
-              </Button>
+              {/* Red */}
+              <div className="flex gap-1">
+                <Button
+                  onClick={() => setMatch(m => ({ ...m, red2: m.red2 + 1 }))}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                >
+                  Red Card
+                </Button>
+                <Button
+                  onClick={() =>
+                    setMatch(m => ({ ...m, red2: Math.max(0, m.red2 - 1) }))
+                  }
+                  variant="outline"
+                  size="sm"
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
