@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Plus, Minus, RotateCcw, Clock } from "lucide-react";
+import { io, Socket } from "socket.io-client";
 
 type FootballMatchState = {
   team1: string;
@@ -16,17 +17,95 @@ type FootballMatchState = {
 };
 
 export function FootballScorecard() {
-  const [match, setMatch] = useState<FootballMatchState>({
-    team1: "Team A",
-    team2: "Team B",
-    scorecard1: 0,
-    scorecard2: 0,
-    yellow1: 0,
-    yellow2: 0,
-    red1: 0,
-    red2: 0,
-    time: 5,
+  const [match, setMatch] = useState<FootballMatchState>(() => {
+    // Load from localStorage if available
+    const saved = localStorage.getItem('football-match-FB-1');
+    return saved ? JSON.parse(saved) : {
+      team1: "Real Madrid",
+      team2: "Barcelona",
+      scorecard1: 0,
+      scorecard2: 0,
+      yellow1: 0,
+      yellow2: 0,
+      red1: 0,
+      red2: 0,
+      time: 5,
+    };
   });
+
+  const [socket, setSocket] = useState<Socket | null>(null);
+
+  // Initialize socket connection
+  useEffect(() => {
+    console.log('🔌 Attempting to connect to socket server...');
+    try {
+      const newSocket = io('http://localhost:5000', {
+        transports: ['polling', 'websocket'], // Try polling first
+        timeout: 20000,
+        forceNew: true,
+        reconnection: true,
+        reconnectionAttempts: 5
+      });
+      
+      newSocket.on('connect', () => {
+        console.log('✅ Connected to socket server with ID:', newSocket.id);
+      });
+      
+      newSocket.on('connect_error', (error) => {
+        console.error('❌ Socket connection error:', error.message, error);
+      });
+      
+      newSocket.on('disconnect', (reason) => {
+        console.log('❌ Disconnected from socket server:', reason);
+      });
+      
+      // Test event
+      newSocket.on('test', (data) => {
+        console.log('🧪 Received test event:', data);
+      });
+      
+      setSocket(newSocket);
+
+      // Listen for match updates from other clients
+      newSocket.on('match-update', (data) => {
+        console.log('📡 Received match update:', data);
+        if (data.matchId === 'FB-1') {
+          setMatch(data.match);
+        }
+      });
+
+      // Send a test message
+      setTimeout(() => {
+        if (newSocket.connected) {
+          console.log('🧪 Sending test message');
+          newSocket.emit('test', { message: 'Hello from frontend' });
+        }
+      }, 1000);
+
+      return () => {
+        console.log('🔌 Cleaning up socket connection');
+        newSocket.disconnect();
+      };
+    } catch (error) {
+      console.error('❌ Failed to create socket connection:', error);
+    }
+  }, []);
+
+  // Emit match updates to socket when state changes (but not for timer)
+  useEffect(() => {
+    if (socket && socket.connected && match) {
+      console.log('📤 Emitting match update:', match);
+      socket.emit('match-update', {
+        matchId: 'FB-1',
+        match: match
+      });
+    }
+  }, [match.scorecard1, match.scorecard2, match.yellow1, match.yellow2, match.red1, match.red2, socket]); // Only emit on score/card changes, not timer
+
+  // Save to localStorage whenever match state changes
+  useEffect(() => {
+    localStorage.setItem('football-match-FB-1', JSON.stringify(match));
+  }, [match]);
 
   const resetMatch = () => {
     setMatch({

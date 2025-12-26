@@ -102,6 +102,19 @@ io.on("connection", (socket) => {
         console.log("📊 Score update received:", data);
         io.emit("score-updated", data);
     });
+
+    // Real-time match updates
+    socket.on("match-update", (data) => {
+        console.log("⚽ Match update received:", data.matchId);
+        // Broadcast to all connected clients except sender
+        socket.broadcast.emit("match-update", data);
+    });
+
+    // Test event
+    socket.on("test", (data) => {
+        console.log("🧪 Test event received:", data);
+        socket.emit("test-response", { message: "Hello from backend" });
+    });
 });
 
 // Health check endpoint

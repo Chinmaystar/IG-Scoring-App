@@ -1,120 +1,106 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 import { Trophy } from 'lucide-react';
 import { Card, CardContent } from "./components/ui/card";
 import { Badge } from "./components/ui/badge";
 
-type Sport = "cricket" | "tabletennis" | "football" | "basketball" | "tennis";
-
-type Match = {
-  id: string;
-  sport: Sport;
-  teamA: string;
-  teamB: string;
-  status: "upcoming" | "live" | "finished";
+type Sport = {
+  _id: string;
+  name: string;
+  code: string;
+  displayName: string;
+  description?: string;
+  maxPlayersPerTeam: number;
+  isActive: boolean;
 };
-/*
-Cricket=CK
-Football=FB
-Basketball=BB
-Tennis=TN
-TableTennis=TT
-*/
-//useEffect(() => fetch("/api/matches")) later
-const MATCHES: Match[] = [
-    {
-      id: "CK-1",
-      sport: "cricket",
-      teamA: "India",
-      teamB: "Australia",
-      status: "live",
-    },
-    {
-      id: "FB-1",
-      sport: "football",
-      teamA: "Real Madrid",
-      teamB: "Barcelona",
-      status: "upcoming",
-    },
-    {
-      id: "BB-1",
-      sport: "basketball",
-      teamA: "Lakers",
-      teamB: "Warriors",
-      status: "finished",
-    },
-    {
-      id: "TN-1",
-      sport: "tennis",
-      teamA: "Djokovic",
-      teamB: "Alcaraz",
-      status: "live",
-    },
-    {
-      id: "TT-1",
-      sport: "tabletennis",
-      teamA: "Team A",
-      teamB: "Team B",
-      status: "upcoming",
-    },
-  ];
-  
-  export default function AdminPage() {
 
-    const navigate = useNavigate();
-    
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 md:p-8">
-        <div className="max-w-5xl mx-auto space-y-6">
-          {/* Header */}
-          <div className="text-center">
-            <div className="flex justify-center items-center gap-3 mb-2">
-              <Trophy className="h-8 w-8 text-blue-600" />
-              <h1 className="text-3xl font-bold">Admin – Matches</h1>
-            </div>
-            <p className="text-muted-foreground">
-              Select a match to manage scores
-            </p>
+export default function AdminPage() {
+  const navigate = useNavigate();
+  const [sports, setSports] = useState<Sport[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSports = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/sports');
+        setSports(response.data.data || []);
+      } catch (error) {
+        console.error('Error fetching sports:', error);
+        setSports([]); // Set empty array on error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSports();
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 md:p-8">
+      <div className="max-w-5xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="text-center">
+          <div className="flex justify-center items-center gap-3 mb-2">
+            <Trophy className="h-8 w-8 text-blue-600" />
+            <h1 className="text-3xl font-bold">Admin – Sports</h1>
           </div>
-  
-          {/* Match list */}
-          <div className="space-y-4">
-            {MATCHES.map((match) => (
+          <p className="text-muted-foreground">
+            Manage sports and create matches
+          </p>
+        </div>
+
+        {/* Sports list */}
+        <div className="space-y-4">
+          {loading ? (
+            <div className="text-center py-8">Loading sports...</div>
+          ) : sports.length === 0 ? (
+            <div className="text-center py-8">No sports found. Backend may not be running.</div>
+          ) : (
+            sports.map((sport) => (
               <Card
-                key={match.id}
+                key={sport._id}
                 className="cursor-pointer hover:shadow-md transition"
                 onClick={() => {
-                  // later → navigate(`/admin/match/${match.id}`)
-                  navigate(`/admin/match/${match.id}`)
+                  // Navigate to the match admin page for this sport
+                  // Map sport codes to match prefixes
+                  const sportCodeMap: { [key: string]: string } = {
+                    'football': 'FB',
+                    'cricket': 'CK',
+                    'basketball': 'BB',
+                    'tennis': 'TN',
+                    'table-tennis': 'TT'
+                  };
+                  const matchPrefix = sportCodeMap[sport.code] || sport.code.toUpperCase().slice(0, 2);
+                  const matchId = `${matchPrefix}-1`;
+                  navigate(`/admin/match/${matchId}`);
                 }}
               >
                 <CardContent className="flex items-center justify-between p-4">
                   <div>
                     <div className="font-semibold">
-                      {match.teamA} vs {match.teamB}
+                      {sport.displayName}
                     </div>
-                    <div className="text-sm text-muted-foreground capitalize">
-                      {match.sport}
+                    <div className="text-sm text-muted-foreground">
+                      Code: {sport.code.toUpperCase()} | Max players: {sport.maxPlayersPerTeam}
                     </div>
+                    {sport.description && (
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {sport.description}
+                      </div>
+                    )}
                   </div>
-  
-                  <Badge
-                    variant={
-                      match.status === "live"
-                        ? "destructive"
-                        : match.status === "upcoming"
-                        ? "secondary"
-                        : "outline"
-                    }
-                  >
-                    {match.status}
+
+                  <Badge variant="secondary">
+                    Active
                   </Badge>
                 </CardContent>
               </Card>
-            ))}
-          </div>
+            ))
+          )}
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}

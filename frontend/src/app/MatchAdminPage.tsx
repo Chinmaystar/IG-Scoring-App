@@ -2,6 +2,9 @@ import React from "react";
 import { useParams } from "react-router-dom";
 import { CricketScorecard } from './components/Cricket/CricketAdmin';
 import { FootballScorecard } from './components/Football/FootballAdmin';
+import { BasketballScorecard } from './components/Basketball/BasketballScorecard';
+import { TableTennisScorecard } from './components/TableTennis/TableTennisScorecard';
+import { TennisScorecard } from './components/Tennis/TennisScorecard';
 
 //API pulls for all matches and also score fpr this particular match
 
@@ -92,6 +95,9 @@ export default function MatchAdminPage() {
       <br></br>
       {sportPrefix==="CK" && <CricketScorecard />}
       {sportPrefix==="FB" && <FootballScorecard />}
+      {sportPrefix==="BB" && <BasketballScorecard />}
+      {sportPrefix==="TT" && <TableTennisScorecard />}
+      {sportPrefix==="TN" && <TennisScorecard />}
 
     </div>
   );

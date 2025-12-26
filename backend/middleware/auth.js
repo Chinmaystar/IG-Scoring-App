@@ -52,3 +52,26 @@ module.exports = {
     isAdmin,
     isScorer,
 };
+
+// Backwards-compatible aliases expected by routes
+const protect = verifyToken;
+
+const authorize = (...roles) => {
+    return (req, res, next) => {
+        if (!roles.includes(req.userRole)) {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied",
+            });
+        }
+        next();
+    };
+};
+
+module.exports = {
+    verifyToken,
+    isAdmin,
+    isScorer,
+    protect,
+    authorize,
+};
