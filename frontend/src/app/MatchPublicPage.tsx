@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { CricketScorecard } from './components/Cricket/CricketScorecard';
-import { FootballScorecard } from './components/Football/FootballAdmin';
+import { FootballScorecard } from './components/Football/FootballScorecard';
 import { io, Socket } from "socket.io-client";
 
 //API pulls for all matches and also score fpr this particular match
@@ -166,8 +166,8 @@ export default function MatchAdminPage() {
       </p>
       <br></br>
       {sportPrefix==="CK" && <CricketScorecard />}
-      {/*sportPrefix==="FB" && <FootballScorecard match={footballMatchData}/>*/}
-      {sportPrefix==="FB" && <FootballScorecard/>}
+      {sportPrefix==="FB" && <FootballScorecard match={footballMatchData}/>}
+      {/*sportPrefix==="FB" && <FootballScorecard/>*/}
 
     </div>
   );
