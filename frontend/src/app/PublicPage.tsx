@@ -5,14 +5,21 @@ import { Card, CardContent } from "./components/ui/card";
 import { Badge } from "./components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { io, Socket } from "socket.io-client";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "./components/ui/select";
+import axios from "axios";
 
 //NO score displayed here, design choice
 
-type Sport = "cricket" | "tabletennis" | "football" | "basketball" | "tennis";
-
 type Match = {
   id: string;
-  sport: Sport;
+  sport: string;
   teamA: string;
   teamB: string;
   status: "upcoming" | "live" | "finished";
@@ -20,52 +27,18 @@ type Match = {
   score2?: number;
 };
 
-const BASE_MATCHES: Match[] = [
-    {
-      id: "CK-1",
-      sport: "cricket",
-      teamA: "India",
-      teamB: "Australia",
-      status: "live",
-    },
-    {
-      id: "FB-1",
-      sport: "football",
-      teamA: "Real Madrid",
-      teamB: "Barcelona",
-      status: "upcoming",
-    },
-    {
-      id: "BB-1",
-      sport: "basketball",
-      teamA: "Lakers",
-      teamB: "Warriors",
-      status: "finished",
-    },
-    {
-      id: "TN-1",
-      sport: "tennis",
-      teamA: "Djokovic",
-      teamB: "Alcaraz",
-      status: "live",
-    },
-    {
-      id: "TT-1",
-      sport: "tabletennis",
-      teamA: "Team A",
-      teamB: "Team B",
-      status: "upcoming",
-    },
-  ];
-
 export default function PublicPage() {
     const navigate = useNavigate();
-    const [matches, setMatches] = useState<Match[]>(BASE_MATCHES);
+    const [matches, setMatches] = useState<Match[]>([]);
+    const [loading, setLoading] = useState(true);
     const [socket, setSocket] = useState<Socket | null>(null);
+    const [tab, setTab] = useState<
+  "scores" | "leaderboard" | "council" | "admin"
+>("scores");
 
     // Initialize socket connection
     useEffect(() => {
-      const newSocket = io('http://localhost:5000');
+      const newSocket = io('http://localhost:5001');
       setSocket(newSocket);
 
       // Listen for match updates
@@ -85,37 +58,37 @@ export default function PublicPage() {
       };
     }, []);
 
-    // Load live scores from localStorage
     useEffect(() => {
-      const updateMatchesWithScores = () => {
-        const updatedMatches = BASE_MATCHES.map(match => {
-          let score1 = undefined;
-          let score2 = undefined;
-
-          // Load scores based on sport
-          if (match.id === "FB-1") {
-            const footballData = localStorage.getItem('football-match-FB-1');
-            if (footballData) {
-              const parsed = JSON.parse(footballData);
-              score1 = parsed.scorecard1;
-              score2 = parsed.scorecard2;
-            }
-          }
-          // Add other sports here as needed
-
-          return { ...match, score1, score2 };
-        });
-        setMatches(updatedMatches);
+      const fetchMatches = async () => {
+        try {
+          const res = await axios.get("http://localhost:5001/api/scores");
+    
+          const mappedMatches: Match[] = res.data.data.map((m: any) => ({
+            id: m._id,
+            sport: m.event,
+            teamA: m.team1.name,
+            teamB: m.team2.name,
+            score1: m.team1.score,
+            score2: m.team2.score,
+            status:
+              m.status === "live"
+                ? "live"
+                : m.status === "completed"
+                ? "finished"
+                : "upcoming",
+          }));
+    
+          setMatches(mappedMatches);
+        } catch (err) {
+          console.error("Failed to fetch matches", err);
+        } finally {
+          setLoading(false);
+        }
       };
-
-      // Update immediately
-      updateMatchesWithScores();
-
-      // Set up interval to check for updates every 2 seconds
-      const interval = setInterval(updateMatchesWithScores, 2000);
-
-      return () => clearInterval(interval);
+    
+      fetchMatches();
     }, []);
+
   return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 md:p-8">
           <div className="max-w-5xl mx-auto space-y-6">
@@ -123,59 +96,124 @@ export default function PublicPage() {
             <div className="text-center">
               <div className="flex justify-center items-center gap-3 mb-2">
                 <Trophy className="h-8 w-8 text-blue-600" />
-                <h1 className="text-3xl font-bold">Matches</h1>
+                <h1 className="text-3xl font-bold">Institute Gathering</h1>
               </div>
               <p className="text-muted-foreground">
-                Select a match to view scores
+                Visvesvaraya National Institute of Technology
               </p>
-            </div>
+              <br></br>
+              {/* Tabs wrapper MUST always exist */}
+              <Tabs
+                value={tab}
+                onValueChange={(value) =>
+                  setTab(value as "scores" | "leaderboard" | "council" | "admin")
+                }
+                className="space-y-6"
+              >
 
-            <div className="flex justify-center mt-4">
-                <Link
-                    to="/login"
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-                >
-                    Admin Panel
-                </Link>
-            </div>
-            
-            {/* Match list */}
-            <div className="space-y-4">
-              {matches.map((match) => (
-                <Card
-                  key={match.id}
-                  className="cursor-pointer hover:shadow-md transition"
-                  onClick={() => {
-                    // later → navigate(`/admin/match/${match.id}`)
-                    navigate(`/match/${match.id}`)
-                  }}
-                >
-                  <CardContent className="flex items-center justify-between p-4">
-                    <div className="flex items-center gap-4">
-                      <div>
-                        <div className="font-semibold">
-                          {match.teamA} vs {match.teamB}
-                        </div>
-                        <div className="text-sm text-muted-foreground capitalize">
-                          {match.sport}
-                        </div>
-                      </div>
+                {/* Mobile selector */}
+                <div className="block md:hidden">
+                  <Select
+                    value={tab}
+                    onValueChange={(value) =>
+                      setTab(value as "scores" | "leaderboard" | "council" | "admin")
+                    }
+                  >
+                    <SelectTrigger className="w-full rounded-full bg-white">
+                      <SelectValue placeholder="Select section" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="scores">Scores</SelectItem>
+                      <SelectItem value="leaderboard">Leaderboard</SelectItem>
+                      <SelectItem value="council">Student Council</SelectItem>
+                      <SelectItem value="admin">Scorer Login</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Desktop tabs */}
+                <div className="hidden md:block">
+                  <TabsList className="grid grid-cols-4">
+                    <TabsTrigger value="scores">Scores</TabsTrigger>
+                    <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
+                    <TabsTrigger value="council">Student Council</TabsTrigger>
+                    <TabsTrigger value="admin">Scorer Login</TabsTrigger>
+                  </TabsList>
+                </div>
+
+                <TabsContent value="scores">
+                {loading ? (
+                    <div className="text-center text-muted-foreground py-10">
+                      Loading matches...
                     </div>
-    
-                    <Badge
-                      variant={
-                        match.status === "live"
-                          ? "destructive"
-                          : match.status === "upcoming"
-                          ? "secondary"
-                          : "outline"
-                      }
+                  ) : matches.length === 0 ? (
+                    <div className="text-center text-muted-foreground py-10">
+                      No matches found
+                    </div>
+                  ) : (
+                  <div className="space-y-4">
+                    {matches.map((match) => (
+                      <Card
+                        key={match.id}
+                        className="cursor-pointer hover:shadow-md transition"
+                        onClick={() => navigate(`/match/${match.id}`)}
+                      >
+                        <CardContent className="flex items-center justify-between p-4">
+                          <div>
+                            <div className="font-semibold">
+                              {match.teamA} vs {match.teamB}
+                            </div>
+                            <div className="text-sm text-muted-foreground capitalize">
+                              {match.sport}
+                            </div>
+                          </div>
+
+                          <Badge
+                            variant={
+                              match.status === "live"
+                                ? "destructive"
+                                : match.status === "upcoming"
+                                ? "secondary"
+                                : "outline"
+                            }
+                          >
+                            {match.status}
+                          </Badge>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="leaderboard">
+                  <Card>
+                    <CardContent className="p-6 text-center text-muted-foreground">
+                      Leaderboard coming soon
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="council">
+                  <Card>
+                    <CardContent className="p-6 text-center text-muted-foreground">
+                      Student Council information coming soon
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="admin">
+                  <div className="flex justify-center">
+                    <Link
+                      to="/login"
+                      className="rounded-lg bg-blue-600 px-6 py-3 text-white hover:bg-blue-700"
                     >
-                      {match.status}
-                    </Badge>
-                  </CardContent>
-                </Card>
-              ))}
+                      Go to Scorer Login
+                    </Link>
+                  </div>
+                </TabsContent>
+
+              </Tabs>
             </div>
           </div>
         </div>
