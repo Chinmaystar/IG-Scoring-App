@@ -9,14 +9,6 @@ import { io, Socket } from "socket.io-client";
 
 //API pulls for all matches and also score fpr this particular match
 
-/*
-Cricket=CK
-Football=FB
-Basketball=BB
-Tennis=TN
-TableTennis=TT
-*/
-
 type ApiMatch = {
   _id: string;
   event: "football" | "cricket" | "basketball" | "tennis" | "tabletennis";
@@ -69,6 +61,8 @@ export default function MatchAdminPage() {
     red2: 0,
     time: 0,
   };
+
+  console.log("test");
 
   return (
     <div className="min-h-screen p-6">

@@ -39,7 +39,7 @@ export function FootballScorecard() {
   useEffect(() => {
     console.log('🔌 Attempting to connect to socket server...');
     try {
-      const newSocket = io('http://localhost:5000', {
+      const newSocket = io('http://localhost:5001', {
         transports: ['polling', 'websocket'], // Try polling first
         timeout: 20000,
         forceNew: true,

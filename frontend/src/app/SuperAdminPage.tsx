@@ -27,7 +27,7 @@ type Match = {
   score2?: number;
 };
 
-export default function PublicPage() {
+export default function SuperAdminPage() {
     const navigate = useNavigate();
     const [matches, setMatches] = useState<Match[]>([]);
     const [loading, setLoading] = useState(true);
@@ -99,7 +99,7 @@ export default function PublicPage() {
                 <h1 className="text-3xl font-bold">Institute Gathering</h1>
               </div>
               <p className="text-muted-foreground">
-                Visvesvaraya National Institute of Technology
+                Visvesvaraya National Institute of Technology | Admin Page
               </p>
               <br></br>
               {/* Tabs wrapper MUST always exist */}
@@ -156,7 +156,7 @@ export default function PublicPage() {
                       <Card
                         key={match.id}
                         className="cursor-pointer hover:shadow-md transition"
-                        onClick={() => navigate(`/match/${match.id}`)}
+                        onClick={() => navigate(`/admin/match/${match.id}`)}
                       >
                         <CardContent className="flex items-center justify-between p-4">
                           <div>
@@ -209,14 +209,6 @@ export default function PublicPage() {
                       className="rounded-lg bg-blue-600 px-6 py-3 text-white hover:bg-blue-700"
                     >
                       Go to Scorer Login
-                    </Link>
-                  </div>
-                  <div className="flex justify-center pt-4">
-                    <Link
-                      to="/superlogin"
-                      className="rounded-lg bg-blue-600 px-6 py-3 text-white hover:bg-blue-700"
-                    >
-                      Go to Admin Login
                     </Link>
                   </div>
                 </TabsContent>
