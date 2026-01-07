@@ -72,7 +72,7 @@ export default function MatchAdminPage() {
       </p>
       <br></br>
       {match.event==="cricket" && <CricketScorecard />}
-      {match.event==="football" && <FootballScorecard />}
+      {match.event === "football" && matchId && (<FootballScorecard matchId={matchId} />)}
       {match.event==="basketball" && <BasketballScorecard />}
       {match.event==="tennis" && <TennisScorecard />}
       {match.event==="tabletennis" && <TableTennisScorecard />}

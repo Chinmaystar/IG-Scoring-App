@@ -205,10 +205,10 @@ export default function AdminPage() {
                 <TabsContent value="admin">
                   <div className="flex justify-center">
                     <Link
-                      to="/login"
+                      to="/superlogin"
                       className="rounded-lg bg-blue-600 px-6 py-3 text-white hover:bg-blue-700"
                     >
-                      Go to Scorer Login
+                      Go to Admin Login
                     </Link>
                   </div>
                 </TabsContent>

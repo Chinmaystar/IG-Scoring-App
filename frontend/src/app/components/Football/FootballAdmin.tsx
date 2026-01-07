@@ -16,101 +16,100 @@ type FootballMatchState = {
   time: number;
 };
 
-export function FootballScorecard() {
-  const [match, setMatch] = useState<FootballMatchState>(() => {
-    // Load from localStorage if available
-    const saved = localStorage.getItem('football-match-FB-1');
-    return saved ? JSON.parse(saved) : {
-      team1: "Real Madrid",
-      team2: "Barcelona",
-      scorecard1: 0,
-      scorecard2: 0,
+export function FootballScorecard({ matchId }: { matchId: string }) {
+  const [match, setMatch] = useState<FootballMatchState | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
+
+  /* ===============================
+     SAFE STATE UPDATE HELPER
+     =============================== */
+  const updateMatch = (
+    updater: (m: FootballMatchState) => FootballMatchState
+  ) => {
+    setMatch(m => (m ? updater(m) : m));
+  };
+
+  /* ===============================
+     INITIAL FETCH (TEMP DATA)
+     =============================== */
+  useEffect(() => {
+    const footballMatchData: FootballMatchState = {
+      team1: "A",
+      team2: "B",
+      scorecard1: 1,
+      scorecard2: 1,
       yellow1: 0,
       yellow2: 0,
       red1: 0,
       red2: 0,
-      time: 5,
+      time: 0,
     };
-  });
 
-  const [socket, setSocket] = useState<Socket | null>(null);
+    setMatch(footballMatchData);
+  }, [matchId]);
 
-  // Initialize socket connection
+  /* ===============================
+     SOCKET CONNECTION
+     =============================== */
   useEffect(() => {
-    console.log('🔌 Attempting to connect to socket server...');
-    try {
-      const newSocket = io('http://localhost:5001', {
-        transports: ['polling', 'websocket'], // Try polling first
-        timeout: 20000,
-        forceNew: true,
-        reconnection: true,
-        reconnectionAttempts: 5
-      });
-      
-      newSocket.on('connect', () => {
-        console.log('✅ Connected to socket server with ID:', newSocket.id);
-      });
-      
-      newSocket.on('connect_error', (error) => {
-        console.error('❌ Socket connection error:', error.message, error);
-      });
-      
-      newSocket.on('disconnect', (reason) => {
-        console.log('❌ Disconnected from socket server:', reason);
-      });
-      
-      // Test event
-      newSocket.on('test', (data) => {
-        console.log('🧪 Received test event:', data);
-      });
-      
-      setSocket(newSocket);
+    const newSocket = io("http://localhost:5001", {
+      transports: ["polling", "websocket"],
+      reconnection: true,
+    });
 
-      // Listen for match updates from other clients
-      newSocket.on('match-update', (data) => {
-        console.log('📡 Received match update:', data);
-        if (data.matchId === 'FB-1') {
-          setMatch(data.match);
-        }
-      });
+    newSocket.on("match-update", data => {
+      if (data.matchId === "FB-1") {
+        setMatch(data.match);
+      }
+    });
 
-      // Send a test message
-      setTimeout(() => {
-        if (newSocket.connected) {
-          console.log('🧪 Sending test message');
-          newSocket.emit('test', { message: 'Hello from frontend' });
-        }
-      }, 1000);
+    setSocket(newSocket);
 
-      return () => {
-        console.log('🔌 Cleaning up socket connection');
-        newSocket.disconnect();
-      };
-    } catch (error) {
-      console.error('❌ Failed to create socket connection:', error);
-    }
+    return () => {
+      newSocket.disconnect();
+    };
   }, []);
 
-  // Emit match updates to socket when state changes (but not for timer)
+  /* ===============================
+     EMIT MATCH UPDATES
+     =============================== */
   useEffect(() => {
-    if (socket && socket.connected && match) {
-      console.log('📤 Emitting match update:', match);
-      socket.emit('match-update', {
-        matchId: 'FB-1',
-        match: match
-      });
-    }
-  }, [match.scorecard1, match.scorecard2, match.yellow1, match.yellow2, match.red1, match.red2, socket]); // Only emit on score/card changes, not timer
+    if (!socket || !socket.connected || !match) return;
 
-  // Save to localStorage whenever match state changes
+    socket.emit("match-update", {
+      matchId: "FB-1",
+      match,
+    });
+  }, [
+    match?.scorecard1,
+    match?.scorecard2,
+    match?.yellow1,
+    match?.yellow2,
+    match?.red1,
+    match?.red2,
+    socket,
+  ]);
+
+  /* ===============================
+     MATCH TIMER
+     =============================== */
   useEffect(() => {
-    localStorage.setItem('football-match-FB-1', JSON.stringify(match));
-  }, [match]);
+    const interval = setInterval(() => {
+      updateMatch(m =>
+        m.time <= 0 ? m : { ...m, time: m.time - 1 }
+      );
+    }, 1000);
 
+    return () => clearInterval(interval);
+  }, []);
+
+  /* ===============================
+     RESET MATCH
+     =============================== */
   const resetMatch = () => {
     setMatch({
-      team1: "Team A",
-      team2: "Team B",
+      team1: "A",
+      team2: "B",
       scorecard1: 0,
       scorecard2: 0,
       yellow1: 0,
@@ -121,17 +120,20 @@ export function FootballScorecard() {
     });
   };
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setMatch((m) => {
-        if (m.time <= 0) return m;
-        return { ...m, time: m.time - 1 };
-      });
-    }, 1000);
-  
-    return () => clearInterval(interval);
-  }, []);
+  /* ===============================
+     LOADING GUARD
+     =============================== */
+  if (!match) {
+    return (
+      <div className="p-6 text-center text-muted-foreground">
+        Loading match…
+      </div>
+    );
+  }
 
+  /* ===============================
+     UI (UNCHANGED)
+     =============================== */
   return (
     <div className="space-y-6">
       {/* Scoreboard */}
@@ -152,7 +154,7 @@ export function FootballScorecard() {
             <div className="flex gap-2 mt-4">
               <Button
                 onClick={() =>
-                  setMatch(m => ({ ...m, scorecard1: m.scorecard1 + 1 }))
+                  updateMatch(m => ({ ...m, scorecard1: m.scorecard1 + 1 }))
                 }
                 className="flex-1"
               >
@@ -161,7 +163,7 @@ export function FootballScorecard() {
 
               <Button
                 onClick={() =>
-                  setMatch(m => ({
+                  updateMatch(m => ({
                     ...m,
                     scorecard1: Math.max(0, m.scorecard1 - 1),
                   }))
@@ -177,7 +179,7 @@ export function FootballScorecard() {
               {/* Yellow */}
               <div className="flex gap-1">
                 <Button
-                  onClick={() => setMatch(m => ({ ...m, yellow1: m.yellow1 + 1 }))}
+                  onClick={() => updateMatch(m => ({ ...m, yellow1: m.yellow1 + 1 }))}
                   variant="outline"
                   size="sm"
                   className="flex-1"
@@ -186,7 +188,7 @@ export function FootballScorecard() {
                 </Button>
                 <Button
                   onClick={() =>
-                    setMatch(m => ({ ...m, yellow1: Math.max(0, m.yellow1 - 1) }))
+                    updateMatch(m => ({ ...m, yellow1: Math.max(0, m.yellow1 - 1) }))
                   }
                   variant="outline"
                   size="sm"
@@ -198,7 +200,7 @@ export function FootballScorecard() {
               {/* Red */}
               <div className="flex gap-1">
                 <Button
-                  onClick={() => setMatch(m => ({ ...m, red1: m.red1 + 1 }))}
+                  onClick={() => updateMatch(m => ({ ...m, red1: m.red1 + 1 }))}
                   variant="outline"
                   size="sm"
                   className="flex-1"
@@ -207,7 +209,7 @@ export function FootballScorecard() {
                 </Button>
                 <Button
                   onClick={() =>
-                    setMatch(m => ({ ...m, red1: Math.max(0, m.red1 - 1) }))
+                    updateMatch(m => ({ ...m, red1: Math.max(0, m.red1 - 1) }))
                   }
                   variant="outline"
                   size="sm"
@@ -235,7 +237,7 @@ export function FootballScorecard() {
             <div className="flex gap-2 mt-4">
               <Button
                 onClick={() =>
-                  setMatch(m => ({ ...m, scorecard2: m.scorecard2 + 1 }))
+                  updateMatch(m => ({ ...m, scorecard2: m.scorecard2 + 1 }))
                 }
                 className="flex-1"
               >
@@ -244,7 +246,7 @@ export function FootballScorecard() {
 
               <Button
                 onClick={() =>
-                  setMatch(m => ({
+                  updateMatch(m => ({
                     ...m,
                     scorecard2: Math.max(0, m.scorecard2 - 1),
                   }))
@@ -259,7 +261,7 @@ export function FootballScorecard() {
               {/* Yellow */}
               <div className="flex gap-1">
                 <Button
-                  onClick={() => setMatch(m => ({ ...m, yellow2: m.yellow2 + 1 }))}
+                  onClick={() => updateMatch(m => ({ ...m, yellow2: m.yellow2 + 1 }))}
                   variant="outline"
                   size="sm"
                   className="flex-1"
@@ -268,7 +270,7 @@ export function FootballScorecard() {
                 </Button>
                 <Button
                   onClick={() =>
-                    setMatch(m => ({ ...m, yellow2: Math.max(0, m.yellow2 - 1) }))
+                    updateMatch(m => ({ ...m, yellow2: Math.max(0, m.yellow2 - 1) }))
                   }
                   variant="outline"
                   size="sm"
@@ -280,7 +282,7 @@ export function FootballScorecard() {
               {/* Red */}
               <div className="flex gap-1">
                 <Button
-                  onClick={() => setMatch(m => ({ ...m, red2: m.red2 + 1 }))}
+                  onClick={() => updateMatch(m => ({ ...m, red2: m.red2 + 1 }))}
                   variant="outline"
                   size="sm"
                   className="flex-1"
@@ -289,7 +291,7 @@ export function FootballScorecard() {
                 </Button>
                 <Button
                   onClick={() =>
-                    setMatch(m => ({ ...m, red2: Math.max(0, m.red2 - 1) }))
+                    updateMatch(m => ({ ...m, red2: Math.max(0, m.red2 - 1) }))
                   }
                   variant="outline"
                   size="sm"
@@ -316,13 +318,13 @@ export function FootballScorecard() {
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={() => setMatch(m => ({ ...m, time: m.time + 60 }))}>
+            <Button onClick={() => updateMatch(m => ({ ...m, time: m.time + 60 }))}>
               +1 Min
             </Button>
-            <Button onClick={() => setMatch(m => ({ ...m, time: m.time + 300 }))}>
+            <Button onClick={() => updateMatch(m => ({ ...m, time: m.time + 300 }))}>
               +5 Min
             </Button>
-            <Button onClick={() => setMatch(m => ({ ...m, time: 0 }))}>
+            <Button onClick={() => updateMatch(m => ({ ...m, time: 0 }))}>
               Reset Time
             </Button>
           </div>

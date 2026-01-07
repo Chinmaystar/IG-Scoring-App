@@ -66,13 +66,13 @@ export default function MatchAdminPage() {
 
   return (
     <div className="min-h-screen p-6">
-      <h1 className="text-2xl font-bold">Match Admin</h1>
+      <h1 className="text-2xl font-bold">Match View</h1>
       <p className="mt-2 text-muted-foreground">
         Current match ID: <span className="font-mono">{matchId}</span>
       </p>
       <br></br>
       {match.event==="cricket" && <CricketScorecard />}
-      {match.event==="football" && <FootballScorecard match={footballMatchData}/>}
+      {match.event === "football" && matchId && (<FootballScorecard matchId={matchId} />)}
       {/*sportPrefix==="FB" && <FootballScorecard/>*/}
       {match.event==="basketball" && <BasketballScorecard />}
       {match.event==="tennis" && <TennisScorecard />}
