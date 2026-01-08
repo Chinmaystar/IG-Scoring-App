@@ -27,7 +27,7 @@ type Match = {
   score2?: number;
 };
 
-export default function AdminPage() {
+export default function SuperAdminPage() {
     const navigate = useNavigate();
     const [matches, setMatches] = useState<Match[]>([]);
     const [loading, setLoading] = useState(true);
@@ -99,7 +99,7 @@ export default function AdminPage() {
                 <h1 className="text-3xl font-bold">Institute Gathering</h1>
               </div>
               <p className="text-muted-foreground">
-                Visvesvaraya National Institute of Technology | Scorer Page
+                Visvesvaraya National Institute of Technology | Admin Page
               </p>
               <br></br>
               {/* Tabs wrapper MUST always exist */}
@@ -205,10 +205,10 @@ export default function AdminPage() {
                 <TabsContent value="admin">
                   <div className="flex justify-center">
                     <Link
-                      to="/superlogin"
+                      to="/login"
                       className="rounded-lg bg-blue-600 px-6 py-3 text-white hover:bg-blue-700"
                     >
-                      Go to Admin Login
+                      Go to Scorer Login
                     </Link>
                   </div>
                 </TabsContent>

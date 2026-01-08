@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Button } from '../ui/button';
 import { Plus, Minus, RotateCcw, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { io, Socket } from "socket.io-client";
 
 type FootballMatchState = {
   team1: string;
@@ -16,24 +17,48 @@ type FootballMatchState = {
   time: number;
 };
 
-export function FootballScorecard({ match }: { match: FootballMatchState }) {
-  console.log("Rendering public v");
-
-  const [time, setTime] = useState(match.time);
+export function FootballScorecard({ matchId }: { matchId: string }) {
+  const [match, setMatch] = useState<FootballMatchState | null>(null);
+  const [time, setTime] = useState(0);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTime((prev) => {
-        if (prev <= 0) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    const newSocket = io("http://localhost:5001", {
+      transports: ["polling", "websocket"],
+    });
   
+    newSocket.on("match-update", (data) => {
+      if (data.matchId === matchId) {
+        setMatch(data.match);
+        setTime(data.match.time);
+      }
+    });
+
+    newSocket.on("connect", () => {
+      // 👇 ask admin/server for latest match state
+      newSocket.emit("request-match", { matchId });
+    });
+  
+    setSocket(newSocket);
+  
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [matchId]);
+
+  useEffect(() => {
+    if (time <= 0) return;
+
+    const interval = setInterval(() => {
+      setTime((prev) => Math.max(prev - 1, 0));
+    }, 1000);
+
     return () => clearInterval(interval);
-  }, []);
+  }, [time]);
+
+  if (!match) {
+    return <div>Loading match...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -79,3 +104,22 @@ export function FootballScorecard({ match }: { match: FootballMatchState }) {
     </div>
   );
 }
+/*
+  useEffect(() => {
+    const fetchMatch = async () => {
+      try {
+        const res = await fetch("http://localhost:5001/api/scores");
+        const json = await res.json();
+  
+        const found = json.data.find((m: ApiMatch) => m._id === matchId);
+        setMatch(found || null);
+      } catch (err) {
+        console.error("Failed to fetch match", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchMatch();
+  }, [matchId]);
+  */

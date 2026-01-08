@@ -16,6 +16,9 @@ const scoreRoutes = require("./routes/scoreRoutes");
 const departmentRoutes = require("./routes/departmentRoutes");
 const sportRoutes = require("./routes/sportRoutes");
 
+// In-memory match state store (keyed by matchId)
+const matchStore = {};
+
 // Load environment variables
 dotenv.config();
 
@@ -105,10 +108,28 @@ io.on("connection", (socket) => {
     });
 
     // Real-time match updates
-    socket.on("match-update", (data) => {
-        console.log("⚽ Match update received:", data.matchId);
-        // Broadcast to all connected clients except sender
-        socket.broadcast.emit("match-update", data);
+    // Admin sends match updates
+    socket.on("match-update", ({ matchId, match }) => {
+        console.log("⚽ Match update received:", matchId);
+
+        // Store latest match state
+        matchStore[matchId] = match;
+
+        // Broadcast to everyone except sender
+        socket.broadcast.emit("match-update", { matchId, match });
+    });
+
+    // Public requests latest match state
+    socket.on("request-match", ({ matchId }) => {
+        console.log("📥 Match state requested:", matchId);
+
+        const match = matchStore[matchId];
+
+        if (match) {
+            socket.emit("match-update", { matchId, match });
+        } else {
+            console.log("⚠️ No match found for:", matchId);
+        }
     });
 
     // Test event

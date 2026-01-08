@@ -5,6 +5,8 @@ import AdminPage from "./AdminPage";
 import LoginPage from "./LoginPage";
 import MatchAdminPage from "./MatchAdminPage";
 import MatchPublicPage from "./MatchPublicPage";
+import SuperLoginPage from "./SuperLoginPage";
+import SuperAdminPage from "./SuperAdminPage";
 
 export default function App() {
   return (
@@ -14,6 +16,8 @@ export default function App() {
       <Route path="/admin" element={<AdminPage />} />
       <Route path="/admin/match/:matchId" element={<MatchAdminPage />} />
       <Route path="/match/:matchId" element={<MatchPublicPage />} />
+      <Route path="/superlogin" element={<SuperLoginPage />} />
+      <Route path="/superadmin" element={<SuperAdminPage />} />
     </Routes>
   );
 }
