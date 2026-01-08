@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Plus, Minus, RotateCcw, Clock } from "lucide-react";
+import { Plus, Minus, RotateCcw, Clock, Play, Pause } from "lucide-react";
 import { io, Socket } from "socket.io-client";
 
 type FootballMatchState = {
@@ -19,10 +19,12 @@ type FootballMatchState = {
 export function FootballScorecard({ matchId }: { matchId: string }) {
   const [match, setMatch] = useState<FootballMatchState | null>(null);
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [isLive, setIsLive] = useState(false);
+  const [isPaused, setIsPaused] = useState(true);
 
   /* ===============================
-     SAFE STATE UPDATE HELPER
-     =============================== */
+     SAFE UPDATE
+  =============================== */
   const updateMatch = (
     updater: (m: FootballMatchState) => FootballMatchState
   ) => {
@@ -30,49 +32,60 @@ export function FootballScorecard({ matchId }: { matchId: string }) {
   };
 
   /* ===============================
-     INITIAL FETCH (TEMP DATA)
-     =============================== */
+     FETCH TEAM NAMES + STATUS
+  =============================== */
   useEffect(() => {
-    const footballMatchData: FootballMatchState = {
-      team1: "A",
-      team2: "B",
-      scorecard1: 1,
-      scorecard2: 1,
-      yellow1: 0,
-      yellow2: 0,
-      red1: 0,
-      red2: 0,
-      time: (40*60),
+    const fetchMatch = async () => {
+      try {
+        const res = await fetch("http://localhost:5001/api/scores");
+        const json = await res.json();
+
+        const found = json.data.find(
+          (m: any) => m._id === matchId && m.event === "football"
+        );
+
+        if (!found) return;
+
+        setIsLive(found.status === "live");
+        setIsPaused(found.status !== "live");
+
+        setMatch({
+          team1: found.team1.name,
+          team2: found.team2.name,
+          scorecard1: 0,
+          scorecard2: 0,
+          yellow1: 0,
+          yellow2: 0,
+          red1: 0,
+          red2: 0,
+          time: 40 * 60,
+        });
+      } catch (err) {
+        console.error("Failed to fetch match", err);
+      }
     };
 
-    setMatch(footballMatchData);
+    fetchMatch();
   }, [matchId]);
 
   /* ===============================
-     SOCKET CONNECTION
-     =============================== */
+     SOCKET SETUP
+  =============================== */
   useEffect(() => {
-    const newSocket = io("http://localhost:5001", {
+    const s = io("http://localhost:5001", {
       transports: ["polling", "websocket"],
-      reconnection: true,
     });
 
-    newSocket.on("match-update", data => {
-      if (data.matchId === matchId) {
-        setMatch(data.match);
-      }
-    });
-
-    setSocket(newSocket);
+    setSocket(s);
 
     return () => {
-      newSocket.disconnect();
+      s.disconnect();
     };
   }, []);
 
   /* ===============================
      EMIT MATCH UPDATES
-     =============================== */
+  =============================== */
   useEffect(() => {
     if (!socket || !socket.connected || !match) return;
 
@@ -92,9 +105,11 @@ export function FootballScorecard({ matchId }: { matchId: string }) {
   ]);
 
   /* ===============================
-     MATCH TIMER
-     =============================== */
+     MATCH TIMER (LIVE ONLY)
+  =============================== */
   useEffect(() => {
+    if (!isLive || isPaused) return;
+
     const interval = setInterval(() => {
       updateMatch(m =>
         m.time <= 0 ? m : { ...m, time: m.time - 1 }
@@ -102,28 +117,41 @@ export function FootballScorecard({ matchId }: { matchId: string }) {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isLive, isPaused]);
 
   /* ===============================
-     RESET MATCH
-     =============================== */
+     CONTROLS
+  =============================== */
+  const startMatch = () => {
+    if (!isLive) return;
+    setIsPaused(false);
+  };
+
+  const pauseMatch = () => {
+    setIsPaused(true);
+  };
+
   const resetMatch = () => {
-    setMatch({
-      team1: "A",
-      team2: "B",
-      scorecard1: 0,
-      scorecard2: 0,
-      yellow1: 0,
-      yellow2: 0,
-      red1: 0,
-      red2: 0,
-      time: 1000,
-    });
+    setMatch(m =>
+      m
+        ? {
+            ...m,
+            scorecard1: 0,
+            scorecard2: 0,
+            yellow1: 0,
+            yellow2: 0,
+            red1: 0,
+            red2: 0,
+            time: 40 * 60,
+          }
+        : m
+    );
+    setIsPaused(true);
   };
 
   /* ===============================
-     LOADING GUARD
-     =============================== */
+     LOADING
+  =============================== */
   if (!match) {
     return (
       <div className="p-6 text-center text-muted-foreground">
@@ -319,14 +347,11 @@ export function FootballScorecard({ matchId }: { matchId: string }) {
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={() => updateMatch(m => ({ ...m, time: m.time + 60 }))}>
-              +1 Min
+            <Button onClick={startMatch} disabled={!isLive || !isPaused}>
+              <Play className="mr-2 h-4 w-4" /> Start
             </Button>
-            <Button onClick={() => updateMatch(m => ({ ...m, time: m.time + 300 }))}>
-              +5 Min
-            </Button>
-            <Button onClick={() => updateMatch(m => ({ ...m, time: 0 }))}>
-              Reset Time
+            <Button onClick={pauseMatch} disabled={isPaused}>
+              <Pause className="mr-2 h-4 w-4" /> Pause
             </Button>
           </div>
         </CardContent>
