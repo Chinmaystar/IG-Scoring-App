@@ -46,18 +46,8 @@ export function FootballScorecard({ matchId }: { matchId: string }) {
     };
   }, [matchId]);
 
-  useEffect(() => {
-    if (time <= 0) return;
-
-    const interval = setInterval(() => {
-      setTime((prev) => Math.max(prev - 1, 0));
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [time]);
-
   if (!match) {
-    return <div>Loading match...</div>;
+    return <div> Match Not Yet Started</div>;
   }
 
   return (

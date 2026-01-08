@@ -101,6 +101,9 @@ export default function AdminPage() {
               <p className="text-muted-foreground">
                 Visvesvaraya National Institute of Technology | Scorer Page
               </p>
+              <p> 
+              As soon as match is opened, timer will start
+              </p>
               <br></br>
               {/* Tabs wrapper MUST always exist */}
               <Tabs
