@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Button } from '../ui/button';
 import { Plus, Minus, RotateCcw, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { io, Socket } from "socket.io-client";
 
 type FootballMatchState = {
   team1: string;
@@ -19,22 +20,30 @@ type FootballMatchState = {
 export function FootballScorecard({ matchId }: { matchId: string }) {
   const [match, setMatch] = useState<FootballMatchState | null>(null);
   const [time, setTime] = useState(0);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    const footballMatchData: FootballMatchState = {
-      team1: "A",
-      team2: "B",
-      scorecard1: 1,
-      scorecard2: 1,
-      yellow1: 0,
-      yellow2: 0,
-      red1: 0,
-      red2: 0,
-      time: 0,
-    };
+    const newSocket = io("http://localhost:5001", {
+      transports: ["polling", "websocket"],
+    });
+  
+    newSocket.on("match-update", (data) => {
+      if (data.matchId === matchId) {
+        setMatch(data.match);
+        setTime(data.match.time);
+      }
+    });
 
-    setMatch(footballMatchData);
-    setTime(footballMatchData.time);
+    newSocket.on("connect", () => {
+      // 👇 ask admin/server for latest match state
+      newSocket.emit("request-match", { matchId });
+    });
+  
+    setSocket(newSocket);
+  
+    return () => {
+      newSocket.disconnect();
+    };
   }, [matchId]);
 
   useEffect(() => {

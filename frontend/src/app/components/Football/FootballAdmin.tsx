@@ -42,7 +42,7 @@ export function FootballScorecard({ matchId }: { matchId: string }) {
       yellow2: 0,
       red1: 0,
       red2: 0,
-      time: 0,
+      time: (40*60),
     };
 
     setMatch(footballMatchData);
@@ -58,7 +58,7 @@ export function FootballScorecard({ matchId }: { matchId: string }) {
     });
 
     newSocket.on("match-update", data => {
-      if (data.matchId === "FB-1") {
+      if (data.matchId === matchId) {
         setMatch(data.match);
       }
     });
@@ -77,7 +77,7 @@ export function FootballScorecard({ matchId }: { matchId: string }) {
     if (!socket || !socket.connected || !match) return;
 
     socket.emit("match-update", {
-      matchId: "FB-1",
+      matchId,
       match,
     });
   }, [
@@ -87,6 +87,7 @@ export function FootballScorecard({ matchId }: { matchId: string }) {
     match?.yellow2,
     match?.red1,
     match?.red2,
+    match?.time,
     socket,
   ]);
 
@@ -116,7 +117,7 @@ export function FootballScorecard({ matchId }: { matchId: string }) {
       yellow2: 0,
       red1: 0,
       red2: 0,
-      time: 0,
+      time: 1000,
     });
   };
 
