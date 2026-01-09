@@ -21,6 +21,8 @@ export function FootballScorecard({ matchId }: { matchId: string }) {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isLive, setIsLive] = useState(false);
   const [isPaused, setIsPaused] = useState(true);
+  const [customMinutes, setCustomMinutes] = useState(40);
+  const [customSeconds, setCustomSeconds] = useState(0);
 
   /* ===============================
      SAFE UPDATE
@@ -146,6 +148,18 @@ export function FootballScorecard({ matchId }: { matchId: string }) {
           }
         : m
     );
+    setIsPaused(true);
+  };
+
+  const saveMatchData = () => {
+    console.log("Push updtaes")
+  }
+
+  const setCustomTime = () => {
+    const totalSeconds = customMinutes * 60 + customSeconds;
+    if (totalSeconds < 0) return;
+
+    updateMatch(m => ({ ...m, time: totalSeconds }));
     setIsPaused(true);
   };
 
@@ -353,6 +367,23 @@ export function FootballScorecard({ matchId }: { matchId: string }) {
             <Button onClick={pauseMatch} disabled={isPaused}>
               <Pause className="mr-2 h-4 w-4" /> Pause
             </Button>
+            {/* Custom Time Input */}
+            <input
+              type="number"
+              value={customMinutes}
+              onChange={e => setCustomMinutes(Number(e.target.value))}
+              className="w-20 border rounded px-2 py-1"
+              placeholder="Min"
+            />
+            :
+            <input
+              type="number"
+              value={customSeconds}
+              onChange={e => setCustomSeconds(Number(e.target.value))}
+              className="w-20 border rounded px-2 py-1"
+              placeholder="Sec"
+            />
+            <Button onClick={setCustomTime}>Set Time</Button>
           </div>
         </CardContent>
       </Card>
@@ -363,9 +394,14 @@ export function FootballScorecard({ matchId }: { matchId: string }) {
           <CardTitle>Match Controls</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="pb-4">
           <Button onClick={resetMatch} variant="destructive" className="w-full">
             <RotateCcw className="mr-2 h-4 w-4" />
             Reset Match
+          </Button>
+          </div>
+          <Button onClick={saveMatchData} variant="secondary" className="w-full">
+            Push Update
           </Button>
         </CardContent>
       </Card>
